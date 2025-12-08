@@ -1,0 +1,11 @@
+# Ignore data files
+data/
+*.xlsx
+*.csv
+*.pkl
+
+# Ignore notebook checkpoints
+.ipynb_checkpoints/
+
+# Ignore Python cache
+__pycache__/
