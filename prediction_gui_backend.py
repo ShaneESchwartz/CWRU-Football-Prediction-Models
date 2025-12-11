@@ -544,11 +544,11 @@ def prompt_new_play_inputs(
 
 
 
-# def predict_top2(model, X):
-#     y_proba = model.predict_proba(X)
-#     top2_idx = np.argsort(y_proba, axis=1)[:, -2:]
-#     classes = model.named_steps['classifier'].classes_
-#     return np.array([[classes[i] for i in row] for row in top2_idx])
+def predict_top2(model, X):
+    y_proba = model.predict_proba(X)
+    top2_idx = np.argsort(y_proba, axis=1)[:, -2:]
+    classes = model.named_steps['classifier'].classes_
+    return np.array([[classes[i] for i in row] for row in top2_idx])
 
 # For top1 prediction simply do the following: y_pred = model_top1.predict(new_X)
 
