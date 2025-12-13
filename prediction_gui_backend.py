@@ -140,158 +140,158 @@ def create_features(df):
 
     return df_out
 
-def evaluate_feature_subset(features, X_train_full, y_train, X_test_full, y_test, model_type='top1'):
-    selected_features = [f for i, f in enumerate(X_train_full.columns) if features[i] == 1]
+# def evaluate_feature_subset(features, X_train_full, y_train, X_test_full, y_test, model_type='top1'):
+#     selected_features = [f for i, f in enumerate(X_train_full.columns) if features[i] == 1]
     
-    if not selected_features:
-        return 0.0  # Avoid empty feature sets
+#     if not selected_features:
+#         return 0.0  # Avoid empty feature sets
 
-    X_train = X_train_full[selected_features]
-    X_test = X_test_full[selected_features]
+#     X_train = X_train_full[selected_features]
+#     X_test = X_test_full[selected_features]
 
-    preprocessor = ColumnTransformer(
-        transformers=[('cat', OneHotEncoder(handle_unknown='ignore'), selected_features)]
-    )
+#     preprocessor = ColumnTransformer(
+#         transformers=[('cat', OneHotEncoder(handle_unknown='ignore'), selected_features)]
+#     )
 
-    pipeline = Pipeline(steps=[
-        ('preprocessor', preprocessor),
-        ('classifier', RandomForestClassifier(random_state=45))
-    ])
+#     pipeline = Pipeline(steps=[
+#         ('preprocessor', preprocessor),
+#         ('classifier', RandomForestClassifier(random_state=45))
+#     ])
     
-    pipeline.fit(X_train, y_train)
+#     pipeline.fit(X_train, y_train)
 
-    if model_type == 'top1':
-        y_pred = pipeline.predict(X_test)
-        return accuracy_score(y_test, y_pred)
+#     if model_type == 'top1':
+#         y_pred = pipeline.predict(X_test)
+#         return accuracy_score(y_test, y_pred)
 
-    elif model_type == 'top2':
-        y_proba = pipeline.predict_proba(X_test)
-        classes = pipeline.named_steps['classifier'].classes_
-        top2_idx = np.argsort(y_proba, axis=1)[:, -2:]
-        top2_preds = np.array([[classes[i] for i in row] for row in top2_idx])
-        correct_top2 = [y in preds for y, preds in zip(y_test, top2_preds)]
-        return np.mean(correct_top2)
+#     elif model_type == 'top2':
+#         y_proba = pipeline.predict_proba(X_test)
+#         classes = pipeline.named_steps['classifier'].classes_
+#         top2_idx = np.argsort(y_proba, axis=1)[:, -2:]
+#         top2_preds = np.array([[classes[i] for i in row] for row in top2_idx])
+#         correct_top2 = [y in preds for y, preds in zip(y_test, top2_preds)]
+#         return np.mean(correct_top2)
 
-    else:
-        raise ValueError("model_type must be 'top1' or 'top2'")
+#     else:
+#         raise ValueError("model_type must be 'top1' or 'top2'")
     
-def evaluate_feature_subset_single(
-    features,                  # list of column NAMES 
-    X_train, y_train, 
-    X_test,  y_test,
-    model_type='top1',         # 'top1' or 'top2'
-    random_state=45,
-    save_name=None):
-    if (model_type == 'top1'):
-        categorical_transformer = OneHotEncoder(handle_unknown='ignore')
+# def evaluate_feature_subset_single(
+#     features,                  # list of column NAMES 
+#     X_train, y_train, 
+#     X_test,  y_test,
+#     model_type='top1',         # 'top1' or 'top2'
+#     random_state=45,
+#     save_name=None):
+#     if (model_type == 'top1'):
+#         categorical_transformer = OneHotEncoder(handle_unknown='ignore')
 
-        preprocessor = ColumnTransformer(
-            transformers=[('cat', categorical_transformer, features)]
-        )
+#         preprocessor = ColumnTransformer(
+#             transformers=[('cat', categorical_transformer, features)]
+#         )
 
-        # Create a Random Forest pipeline
-        rf_pipeline = Pipeline(steps=[
-            ('preprocessor', preprocessor),
-            ('classifier', RandomForestClassifier(random_state=45))
-        ])
+#         # Create a Random Forest pipeline
+#         rf_pipeline = Pipeline(steps=[
+#             ('preprocessor', preprocessor),
+#             ('classifier', RandomForestClassifier(random_state=45))
+#         ])
 
-        # Train the model
-        rf_pipeline.fit(X_train, y_train)
+#         # Train the model
+#         rf_pipeline.fit(X_train, y_train)
 
-        # Predict and evaluate
-        y_pred = rf_pipeline.predict(X_test)
-        print(classification_report(y_test, y_pred))
+#         # Predict and evaluate
+#         y_pred = rf_pipeline.predict(X_test)
+#         print(classification_report(y_test, y_pred))
 
-        if save_name:
-            joblib.dump(rf_pipeline, f"{save_name}.pkl")
+#         if save_name:
+#             joblib.dump(rf_pipeline, f"{save_name}.pkl")
 
-        return rf_pipeline
+#         return rf_pipeline
 
-    elif (model_type == 'top2'):
-        # Rebuild preprocessor and pipeline with top-2 selected features
-        categorical_transformer = OneHotEncoder(handle_unknown='ignore')
+#     elif (model_type == 'top2'):
+#         # Rebuild preprocessor and pipeline with top-2 selected features
+#         categorical_transformer = OneHotEncoder(handle_unknown='ignore')
 
-        preprocessor_top2 = ColumnTransformer(
-            transformers=[('cat', categorical_transformer, features)]
-        )
+#         preprocessor_top2 = ColumnTransformer(
+#             transformers=[('cat', categorical_transformer, features)]
+#         )
 
-        rf_pipeline_top2 = Pipeline(steps=[
-            ('preprocessor', preprocessor_top2),
-            ('classifier', RandomForestClassifier(random_state=45))
-        ])
+#         rf_pipeline_top2 = Pipeline(steps=[
+#             ('preprocessor', preprocessor_top2),
+#             ('classifier', RandomForestClassifier(random_state=45))
+#         ])
 
-        # Fit on top-2 feature subset
-        rf_pipeline_top2.fit(X_train, y_train)
+#         # Fit on top-2 feature subset
+#         rf_pipeline_top2.fit(X_train, y_train)
         
-        y_proba = rf_pipeline_top2.predict_proba(X_test)
+#         y_proba = rf_pipeline_top2.predict_proba(X_test)
 
-        # Get class labels (in the same order as columns of y_proba)
-        classes = rf_pipeline_top2.named_steps['classifier'].classes_
+#         # Get class labels (in the same order as columns of y_proba)
+#         classes = rf_pipeline_top2.named_steps['classifier'].classes_
 
-        # For each sample, get indices of top 2 probs
-        top2_idx = np.argsort(y_proba, axis=1)[:, -2:]
+#         # For each sample, get indices of top 2 probs
+#         top2_idx = np.argsort(y_proba, axis=1)[:, -2:]
 
-        # Convert indices to class labels
-        top2_preds = np.array([[classes[i] for i in row] for row in top2_idx])
+#         # Convert indices to class labels
+#         top2_preds = np.array([[classes[i] for i in row] for row in top2_idx])
 
-        # y_test must be a numpy array or series of actual labels
-        correct_top2 = [true in preds for true, preds in zip(y_test, top2_preds)]
-        top2_accuracy = np.mean(correct_top2)
-        print(f"Top-2 Accuracy: {top2_accuracy:.2f}")
+#         # y_test must be a numpy array or series of actual labels
+#         correct_top2 = [true in preds for true, preds in zip(y_test, top2_preds)]
+#         top2_accuracy = np.mean(correct_top2)
+#         print(f"Top-2 Accuracy: {top2_accuracy:.2f}")
 
-        y_test_array = np.array(y_test)
+#         y_test_array = np.array(y_test)
 
-        # Create 'soft' top-2 predictions
-        soft_top2_preds = []
-        for i, row in enumerate(top2_preds):
-            true = y_test_array[i]
-            if true in row:
-                soft_top2_preds.append(true)  # Treat as correct if in top-2
-            else:
-                soft_top2_preds.append(row[1])  # Use 2nd best prediction
+#         # Create 'soft' top-2 predictions
+#         soft_top2_preds = []
+#         for i, row in enumerate(top2_preds):
+#             true = y_test_array[i]
+#             if true in row:
+#                 soft_top2_preds.append(true)  # Treat as correct if in top-2
+#             else:
+#                 soft_top2_preds.append(row[1])  # Use 2nd best prediction
 
-        # Print full classification report
-        print(classification_report(y_test_array, soft_top2_preds))
+#         # Print full classification report
+#         print(classification_report(y_test_array, soft_top2_preds))
 
-        if save_name:
-            joblib.dump(rf_pipeline_top2, f"{save_name}.pkl")
+#         if save_name:
+#             joblib.dump(rf_pipeline_top2, f"{save_name}.pkl")
 
-        return rf_pipeline_top2
+#         return rf_pipeline_top2
     
-def genetic_algorithm(X_train, y_train, X_test, y_test, n_generations=30, pop_size=50, mutation_rate=0.15, model_type='top1'):
-    n_features = X_train.shape[1]
-    population = [np.random.randint(0, 2, size=n_features).tolist() for _ in range(pop_size)]
+# def genetic_algorithm(X_train, y_train, X_test, y_test, n_generations=30, pop_size=50, mutation_rate=0.15, model_type='top1'):
+#     n_features = X_train.shape[1]
+#     population = [np.random.randint(0, 2, size=n_features).tolist() for _ in range(pop_size)]
 
-    for generation in range(n_generations):
-        scores = [evaluate_feature_subset(ind, X_train, y_train, X_test, y_test, model_type) for ind in population]
-        print(f"Generation {generation}: Best score = {max(scores):.4f}")
+#     for generation in range(n_generations):
+#         scores = [evaluate_feature_subset(ind, X_train, y_train, X_test, y_test, model_type) for ind in population]
+#         print(f"Generation {generation}: Best score = {max(scores):.4f}")
 
-        # Select top 50%
-        sorted_pop = [x for _, x in sorted(zip(scores, population), reverse=True)]
-        parents = sorted_pop[:pop_size // 2]
+#         # Select top 50%
+#         sorted_pop = [x for _, x in sorted(zip(scores, population), reverse=True)]
+#         parents = sorted_pop[:pop_size // 2]
 
-        # Crossover
-        offspring = []
-        while len(offspring) < pop_size - len(parents):
-            p1, p2 = random.sample(parents, 2)
-            cut = random.randint(1, n_features - 1)
-            child = p1[:cut] + p2[cut:]
-            offspring.append(child)
+#         # Crossover
+#         offspring = []
+#         while len(offspring) < pop_size - len(parents):
+#             p1, p2 = random.sample(parents, 2)
+#             cut = random.randint(1, n_features - 1)
+#             child = p1[:cut] + p2[cut:]
+#             offspring.append(child)
 
-        # Mutation
-        for child in offspring:
-            if random.random() < mutation_rate:
-                idx = random.randint(0, n_features - 1)
-                child[idx] = 1 - child[idx]
+#         # Mutation
+#         for child in offspring:
+#             if random.random() < mutation_rate:
+#                 idx = random.randint(0, n_features - 1)
+#                 child[idx] = 1 - child[idx]
 
-        population = parents + offspring
+#         population = parents + offspring
 
-    # Return best feature subset
-    final_scores = [evaluate_feature_subset(ind, X_train, y_train, X_test, y_test, model_type) for ind in population]
-    best_idx = np.argmax(final_scores)
-    best_features = [f for i, f in enumerate(X_train.columns) if population[best_idx][i] == 1]
+#     # Return best feature subset
+#     final_scores = [evaluate_feature_subset(ind, X_train, y_train, X_test, y_test, model_type) for ind in population]
+#     best_idx = np.argmax(final_scores)
+#     best_features = [f for i, f in enumerate(X_train.columns) if population[best_idx][i] == 1]
     
-    return best_features 
+#     return best_features 
 
 def split_train(df, location, inputs, target):
     split_index = int(len(df) * location)
@@ -305,25 +305,25 @@ def split_train(df, location, inputs, target):
 
     return X_train, X_test, y_train, y_test
 
-def rf_input(X_train, X_test, y_train, y_test, features):
-    categorical_transformer = OneHotEncoder(handle_unknown='ignore')
+# def rf_input(X_train, X_test, y_train, y_test, features):
+#     categorical_transformer = OneHotEncoder(handle_unknown='ignore')
 
-    preprocessor = ColumnTransformer(
-        transformers=[('cat', categorical_transformer, features)]
-    )
+#     preprocessor = ColumnTransformer(
+#         transformers=[('cat', categorical_transformer, features)]
+#     )
 
-    # Create a Random Forest pipeline
-    rf_pipeline = Pipeline(steps=[
-        ('preprocessor', preprocessor),
-        ('classifier', RandomForestClassifier(random_state=45))
-    ])
+#     # Create a Random Forest pipeline
+#     rf_pipeline = Pipeline(steps=[
+#         ('preprocessor', preprocessor),
+#         ('classifier', RandomForestClassifier(random_state=45))
+#     ])
 
-    # Train the model
-    rf_pipeline.fit(X_train, y_train)
+#     # Train the model
+#     rf_pipeline.fit(X_train, y_train)
 
-    # Predict and evaluate
-    y_pred = rf_pipeline.predict(X_test)
-    print(classification_report(y_test, y_pred))
+#     # Predict and evaluate
+#     y_pred = rf_pipeline.predict(X_test)
+#     print(classification_report(y_test, y_pred))
 
 # TEMP
 
@@ -337,30 +337,30 @@ def pre_split_prep(df):
 # Manually do df.columns and create a list df_input_cols with the appropriate valid columns, create df_target_col = 'OFF FORM'
 
 # 
-def get_best_features(df, df_input_cols, df_target_col):
-    df = df.copy()
-    X_train_temp, X_test_temp, y_train_temp, y_test_temp = split_train(
-            df, 0.7, df_input_cols, df_target_col
-        )
-    best_features_top1 = genetic_algorithm(
-        X_train_temp, y_train_temp, X_test_temp, y_test_temp,
-        n_generations=15, pop_size=50,
-        mutation_rate=0.15, model_type='top1'
-    )
+# def get_best_features(df, df_input_cols, df_target_col):
+#     df = df.copy()
+#     X_train_temp, X_test_temp, y_train_temp, y_test_temp = split_train(
+#             df, 0.7, df_input_cols, df_target_col
+#         )
+#     best_features_top1 = genetic_algorithm(
+#         X_train_temp, y_train_temp, X_test_temp, y_test_temp,
+#         n_generations=15, pop_size=50,
+#         mutation_rate=0.15, model_type='top1'
+#     )
 
-    best_features_top2 = genetic_algorithm(
-        X_train_temp, y_train_temp, X_test_temp, y_test_temp,
-        n_generations=15, pop_size=50,
-        mutation_rate=0.15, model_type='top2'
-    )
+#     best_features_top2 = genetic_algorithm(
+#         X_train_temp, y_train_temp, X_test_temp, y_test_temp,
+#         n_generations=15, pop_size=50,
+#         mutation_rate=0.15, model_type='top2'
+#     )
 
-    evaluate_feature_subset_single(best_features_top1, X_train_temp, y_train_temp, 
-                        X_test_temp, y_test_temp, model_type='top1')
+#     evaluate_feature_subset_single(best_features_top1, X_train_temp, y_train_temp, 
+#                         X_test_temp, y_test_temp, model_type='top1')
 
-    evaluate_feature_subset_single(best_features_top2, X_train_temp, y_train_temp, 
-                        X_test_temp, y_test_temp, model_type='top2')
+#     evaluate_feature_subset_single(best_features_top2, X_train_temp, y_train_temp, 
+#                         X_test_temp, y_test_temp, model_type='top2')
     
-    return best_features_top1, best_features_top2
+#     return best_features_top1, best_features_top2
 
 def edit_previous_play(df, values=None, rewrite='y'):
     df_new = df.copy()

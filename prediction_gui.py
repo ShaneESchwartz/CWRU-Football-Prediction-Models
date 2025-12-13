@@ -37,6 +37,26 @@ def load_model():
         model = joblib.load(path)
         messagebox.showinfo("Loaded", "Model loaded successfully!")
 
+def convert_clock_to_half(clock_str, qtr):
+    """
+    Convert scoreboard time (MM:SS) into TIME TO HALF format.
+    """
+    mm, ss = map(int, clock_str.split(":"))
+    total_seconds = mm * 60 + ss
+
+    if qtr in [1, 3]:
+        # 15 minutes left in quarter -> add full quarter length
+        time_to_half_seconds = total_seconds + 900
+    else:
+        # Q2 or Q4 → already counting directly to half/end
+        time_to_half_seconds = total_seconds
+
+    # Convert seconds back to MM:SS
+    mm2 = time_to_half_seconds // 60
+    ss2 = time_to_half_seconds % 60
+    return f"{mm2:02d}:{ss2:02d}"
+
+
 def enter_play():
     global df_history, current_play, current_play_num, current_quarter
     global time_to_half, current_down, current_distance, yard_ln
@@ -91,7 +111,9 @@ def show_predictions(preds):
 #     df_history = enter_results(df_history)
 
 def enter_results_button():
-    global df_history
+    global df_history, time_to_half, hash_opt
+    global current_down, current_distance, yard_ln
+    global current_quarter
 
     if df_history is None or len(df_history) == 0:
         messagebox.showerror("Error", "No plays found to update.")
@@ -105,13 +127,13 @@ def enter_results_button():
     play_type_var = tk.StringVar()
     tk.Entry(popup, textvariable=play_type_var).pack()
 
-    tk.Label(popup, text="Result (e.g., Complete, Incomplete, Sack, Interception):").pack(pady=3)
+    tk.Label(popup, text="Result (e.g., Rush, Complete, Incomplete, Sack, Interception):").pack(pady=3)
     result_var = tk.StringVar()
     tk.Entry(popup, textvariable=result_var).pack()
 
-    tk.Label(popup, text="Yards Gained or Lost:").pack(pady=3)
-    gain_var = tk.StringVar()
-    tk.Entry(popup, textvariable=gain_var).pack()
+    tk.Label(popup, text="Yard line the play ended on(-1 to -49 for off team's half, 50 to 1 for def team's half):").pack(pady=3)
+    yard_ln_var = tk.StringVar()
+    tk.Entry(popup, textvariable=yard_ln_var).pack()
 
     tk.Label(popup, text="True Personnel (ex: 10, 12, 12T):").pack(pady=3)
     personnel_var = tk.StringVar()
@@ -121,19 +143,49 @@ def enter_results_button():
     form_var = tk.StringVar()
     tk.Entry(popup, textvariable=form_var).pack()
 
+    tk.Label(popup, text="Hash for next play (ex: L, M, R):").pack(pady=3)
+    hash_var = tk.StringVar()
+    tk.Entry(popup, textvariable=hash_var).pack()
+
+    tk.Label(popup, text="Time on clock (ex: 12:30):").pack(pady=3)
+    time_on_clock_var = tk.StringVar()
+    tk.Entry(popup, textvariable=time_on_clock_var).pack()
+
     def submit():
-        # Build results dictionary from inputs
+        global time_to_half, hash_opt, yard_ln, current_distance, current_down
+
+        if (yard_ln > 0 & yard_ln_var > 0) or (yard_ln < 0 & yard_ln_var < 0):
+            gain_var = abs(yard_ln_var - yard_ln)
+
+        elif (yard_ln < 0 & yard_ln_var > 0):
+            own_half = 50 - abs(yard_ln)
+            opp_half = 50 - yard_ln_var
+            gain_var = own_half + opp_half
+        
+        elif (yard_ln > 0 & yard_ln_var < 0):
+            own_half = 50 - yard_ln
+            opp_half = 50 - abs(yard_ln_var)
+            gain_var = (own_half + opp_half) * -1
+
+        if gain_var >= current_distance:
+            current_down = 1
+            current_distance = 10
+
+        user_clock = time_on_clock_var.get().strip()
+        time_to_half = convert_clock_to_half(user_clock, current_quarter)
+
         results_dict = {
             "PLAY TYPE": play_type_var.get().title().strip(),
             "RESULT": result_var.get().title().strip(),
             "GN/LS": gain_var.get().strip(),
             "PERSONNEL": personnel_var.get().upper().strip(),
-            "OFF FORM": form_var.get().upper().strip()
+            "OFF FORM": form_var.get().upper().strip(),
+            "HASH": hash_var.get().upper().strip(),
+            "TIME TO HALF": time_to_half,
         }
 
         # Send to backend function
         from prediction_gui_backend import enter_results
-        nonlocal df_history
         df_history = enter_results(df_history, results_dict)
 
         popup.destroy()
@@ -147,7 +199,7 @@ def next_quarter():
 
 def new_drive():
     """Start a new possession and set starting yard line."""
-    global current_down, current_distance, yard_ln
+    global current_down, current_distance, yard_ln, time_to_half, hash_opt
     current_down = 0           # mark start of possession (first play)
     current_distance = 10      # always start a drive needing 10 yards
 
@@ -158,7 +210,7 @@ def new_drive():
     # Text prompt explaining the expected format
     tk.Label(
         popup,
-        text="Enter starting yard line:\n(-1 to -49 for own half, 50 to 1 for opponent half)",
+        text="Enter starting yard line:\n(-1 to -49 for off team's half, 50 to 1 for def team's half)",
         wraplength=250
     ).pack(pady=5)
 
@@ -166,10 +218,21 @@ def new_drive():
     yard_var = tk.DoubleVar()
     tk.Entry(popup, textvariable=yard_var).pack()
 
+    tk.Label(popup, text="Time on clock (ex: 12:30):").pack(pady=3)
+    time_on_clock_var = tk.StringVar()
+    tk.Entry(popup, textvariable=time_on_clock_var).pack()
+
+    tk.Label(popup, text="Hash for next play (ex: L, M, R):").pack(pady=3)
+    hash_var = tk.StringVar()
+    tk.Entry(popup, textvariable=hash_var).pack()
+
     # Function that runs when the user clicks "Start Drive"
     def submit():
-        global yard_ln
+        global yard_ln, time_to_half, hash_opt
         val = yard_var.get()
+        user_clock = time_on_clock_var.get().strip()
+        time_to_half = convert_clock_to_half(user_clock, current_quarter)
+        hash_opt = hash_var.get().upper().strip()
 
         # check that value is valid for either half
         if (-49 <= val <= -1) or (1 <= val <= 50):
@@ -188,7 +251,27 @@ def new_drive():
     # Button to confirm and run the submit function
     tk.Button(popup, text="Start Drive", command=submit).pack(pady=5)
 
+def update_score():
+    global own_score, opp_score
+    # Create a popup window to get scores
+    popup = tk.Toplevel()
+    popup.title("Update Score")
 
+    tk.Label(popup, text="Your Team's Score:").pack(pady=3)
+    own_score_var = tk.IntVar()
+    tk.Entry(popup, textvariable=own_score_var).pack()
+
+    tk.Label(popup, text="Opponent's Score:").pack(pady=3)
+    opp_score_var = tk.IntVar()
+    tk.Entry(popup, textvariable=opp_score_var).pack()
+
+    def submit():
+        global own_score, opp_score
+        own_score = own_score_var.get()
+        opp_score = opp_score_var.get()
+        popup.destroy()
+
+    tk.Button(popup, text="Update", command=submit).pack(pady=5)
 
 def edit_last_play():
     global df_history
@@ -216,5 +299,7 @@ tk.Button(root, text="Enter Actual Results", width=25, command=enter_results_but
 tk.Button(root, text="Edit Previous Play", width=25, command=edit_last_play).pack(pady=3)
 tk.Button(root, text="Save Dataset", width=25, command=save_data).pack(pady=3)
 tk.Button(root, text="Quit", width=25, command=root.quit).pack(pady=10)
+tk.Button(root, text="Next Quarter", width=25, command=next_quarter).pack(pady=3)
+tk.Button(root, text="Start New Drive", width=25, command=new_drive).pack(pady=3)
 
 root.mainloop()
