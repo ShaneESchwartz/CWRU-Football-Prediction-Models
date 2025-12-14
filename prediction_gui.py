@@ -154,15 +154,23 @@ def enter_results_button():
     def submit():
         global time_to_half, hash_opt, yard_ln, current_distance, current_down
 
-        if (yard_ln > 0 & yard_ln_var > 0) or (yard_ln < 0 & yard_ln_var < 0):
+    # ---- Convert ending yard line ----
+        try:
+            ending_yard_ln = int(yard_ln_var.get().strip())
+        except ValueError:
+            messagebox.showerror("Error", "Ending yard line must be an integer.")
+            return
+
+        if (yard_ln > 0 and yard_ln_var > 0) or (yard_ln < 0 and yard_ln_var < 0):
             gain_var = abs(yard_ln_var - yard_ln)
 
-        elif (yard_ln < 0 & yard_ln_var > 0):
+        elif (yard_ln < 0 and yard_ln_var > 0):
             own_half = 50 - abs(yard_ln)
             opp_half = 50 - yard_ln_var
             gain_var = own_half + opp_half
         
-        elif (yard_ln > 0 & yard_ln_var < 0):
+        elif (yard_ln > 0 and
+               yard_ln_var < 0):
             own_half = 50 - yard_ln
             opp_half = 50 - abs(yard_ln_var)
             gain_var = (own_half + opp_half) * -1
