@@ -152,7 +152,7 @@ def enter_results_button():
     tk.Entry(popup, textvariable=time_on_clock_var).pack()
 
     def submit():
-        global time_to_half, hash_opt, yard_ln, current_distance, current_down
+        global time_to_half, hash_opt, yard_ln, current_distance, current_down, df_history
 
     # ---- Convert ending yard line ----
         try:
@@ -161,18 +161,18 @@ def enter_results_button():
             messagebox.showerror("Error", "Ending yard line must be an integer.")
             return
 
-        if (yard_ln > 0 and yard_ln_var > 0) or (yard_ln < 0 and yard_ln_var < 0):
-            gain_var = abs(yard_ln_var - yard_ln)
+        if (yard_ln > 0 and ending_yard_ln > 0) or (yard_ln < 0 and ending_yard_ln < 0):
+            gain_var = abs(ending_yard_ln - yard_ln)
 
-        elif (yard_ln < 0 and yard_ln_var > 0):
+        elif (yard_ln < 0 and ending_yard_ln > 0):
             own_half = 50 - abs(yard_ln)
-            opp_half = 50 - yard_ln_var
+            opp_half = 50 - ending_yard_ln
             gain_var = own_half + opp_half
         
         elif (yard_ln > 0 and
-               yard_ln_var < 0):
+               ending_yard_ln < 0):
             own_half = 50 - yard_ln
-            opp_half = 50 - abs(yard_ln_var)
+            opp_half = 50 - abs(ending_yard_ln)
             gain_var = (own_half + opp_half) * -1
 
         if gain_var >= current_distance:
@@ -185,7 +185,7 @@ def enter_results_button():
         results_dict = {
             "PLAY TYPE": play_type_var.get().title().strip(),
             "RESULT": result_var.get().title().strip(),
-            "GN/LS": gain_var.get().strip(),
+            "GN/LS": gain_var,
             "PERSONNEL": personnel_var.get().upper().strip(),
             "OFF FORM": form_var.get().upper().strip(),
             "HASH": hash_var.get().upper().strip(),
