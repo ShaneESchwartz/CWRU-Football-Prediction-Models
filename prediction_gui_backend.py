@@ -279,7 +279,7 @@ def display_forms(df_hist, current_play, model):
         # print(df_temp["PERSONNEL_11T"].tail(5))
         # print(df_temp["PERSONNEL_12T"].tail(5))
 
-        # Remove the target variable from the set to select the inputs only
+        # Remove the target variable from the set to select the final row as the only input (final row is one of the possible personnel groups)
         X = df_temp.iloc[[-1]].drop(columns=['OFF FORM'])
 
         # Get top 2 most likely formations for this personnel group

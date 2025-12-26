@@ -57,7 +57,7 @@ def convert_clock_to_half(clock_str, qtr):
     return f"{mm2:02d}:{ss2:02d}"
 
 
-def enter_play():
+def check_play():
     global df_history, current_play, current_play_num, current_quarter
     global time_to_half, current_down, current_distance, yard_ln
     global hash_opt, own_score, opp_score, two_min_flag
@@ -66,9 +66,9 @@ def enter_play():
         messagebox.showerror("Error", "Please load a dataset first.")
         return
 
-    # Increment play number for each new play
-    if current_play_num != 0:
-        current_play_num = current_play_num + 1
+    # # Increment play number for each new play
+    # if current_play_num != 0:
+    #     current_play_num = current_play_num + 1
 
     # Auto-update 2-minute warning flag
     mm, ss = map(int, time_to_half.split(":"))
@@ -92,9 +92,41 @@ def enter_play():
 
 def predict_play():
     global df_history, current_play, model
+    global current_play_num, current_quarter
+    global time_to_half, current_down, current_distance, yard_ln
+    global hash_opt, own_score, opp_score, two_min_flag
+
+
+
+    # Auto-update 2-minute warning flag
+    mm, ss = map(int, time_to_half.split(":"))
+    total_seconds = mm * 60 + ss
+    two_min_flag = "Y" if current_quarter in [2, 4] and total_seconds <= 120 else 0
+
+    # Build play dict using the backend function
+    current_play = prompt_new_play_inputs(
+        df_history=df_history,
+        play_num=current_play_num,
+        qtr=current_quarter,
+        time_to_half=time_to_half,
+        dn=current_down,
+        dist=current_distance,
+        yard_ln=yard_ln,
+        hash_opt=hash_opt,
+        own_score=own_score,
+        opp_score=opp_score,
+        two_min_flag=two_min_flag,
+    )
+
+    df_history = pd.concat([df_history, pd.DataFrame([current_play])], ignore_index=True)
+
+    # Increment play number for each new play
+    current_play_num = current_play_num + 1
+
     if any(v is None for v in [df_history, current_play, model]):
         messagebox.showerror("Error", "Dataset, model, or inputs missing.")
         return
+
     predictions = display_forms(df_history, current_play, model)
     show_predictions(predictions)
 
@@ -301,7 +333,7 @@ root.geometry("350x380")
 
 tk.Button(root, text="Load Dataset", width=25, command=load_data).pack(pady=3)
 tk.Button(root, text="Load Model", width=25, command=load_model).pack(pady=3)
-tk.Button(root, text="Check Current Play Info", width=25, command=enter_play).pack(pady=3)
+tk.Button(root, text="Check Current Play", width=25, command=check_play).pack(pady=3)
 tk.Button(root, text="Predict Formation", width=25, command=predict_play).pack(pady=3)
 tk.Button(root, text="Enter Actual Results", width=25, command=enter_results_button).pack(pady=3)
 tk.Button(root, text="Edit Previous Play", width=25, command=edit_last_play).pack(pady=3)
