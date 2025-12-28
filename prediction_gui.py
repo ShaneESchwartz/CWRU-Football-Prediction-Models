@@ -5,8 +5,6 @@ import joblib
 from prediction_gui_backend import (
     prompt_new_play_inputs,
     display_forms,
-    enter_results,
-    edit_previous_play,
 )
 
 df_history = None
@@ -96,8 +94,6 @@ def predict_play():
     global time_to_half, current_down, current_distance, yard_ln
     global hash_opt, own_score, opp_score, two_min_flag
 
-
-
     # Auto-update 2-minute warning flag
     mm, ss = map(int, time_to_half.split(":"))
     total_seconds = mm * 60 + ss
@@ -138,10 +134,6 @@ def show_predictions(preds):
         tk.Label(popup, text=f"{p}: {forms[0]}, {forms[1]}", font=("Arial", 12)).pack(anchor="w")
     tk.Button(popup, text="OK", command=popup.destroy).pack(pady=5)
 
-# def enter_results_button():
-#     global df_history
-#     df_history = enter_results(df_history)
-
 def enter_results_button():
     global df_history, time_to_half, hash_opt
     global current_down, current_distance, yard_ln
@@ -159,7 +151,7 @@ def enter_results_button():
     # play_type_var = tk.StringVar()
     # tk.Entry(popup, textvariable=play_type_var).pack()
 
-    tk.Label(popup, text="Result (e.g., Rush, Complete, Incomplete, Sack, Interception):").pack(pady=3)
+    tk.Label(popup, text="Result (e.g., Rush, Scramble, Complete, Incomplete, Sack, Interception):").pack(pady=3)
     result_var = tk.StringVar()
     tk.Entry(popup, textvariable=result_var).pack()
 
@@ -323,20 +315,6 @@ def update_score():
 
     tk.Button(popup, text="Update", command=submit).pack(pady=5)
 
-def edit_last_play():
-    global df_history
-    df_history = edit_previous_play(df_history)
-
-def save_data():
-    global df_history
-    if df_history is None:
-        messagebox.showerror("Error", "No dataset to save.")
-        return
-    path = filedialog.asksaveasfilename(defaultextension=".csv")
-    if path:
-        df_history.to_csv(path, index=False)
-        messagebox.showinfo("Saved", f"Saved to {path}")
-
 root = tk.Tk()
 root.title("Football Play Predictor")
 root.geometry("350x380")
@@ -346,11 +324,9 @@ tk.Button(root, text="Load Model", width=25, command=load_model).pack(pady=3)
 tk.Button(root, text="Check Current Play", width=25, command=check_play).pack(pady=3)
 tk.Button(root, text="Predict Formation", width=25, command=predict_play).pack(pady=3)
 tk.Button(root, text="Enter Actual Results", width=25, command=enter_results_button).pack(pady=3)
-tk.Button(root, text="Edit Previous Play", width=25, command=edit_last_play).pack(pady=3)
 tk.Button(root, text="Next Quarter", width=25, command=next_quarter).pack(pady=3)
 tk.Button(root, text="Start New Drive", width=25, command=new_drive).pack(pady=3)
 tk.Button(root, text="Update Score", width=25, command=update_score).pack(pady=3)
-tk.Button(root, text="Save Dataset", width=25, command=save_data).pack(pady=3)
 tk.Button(root, text="Quit", width=25, command=root.quit).pack(pady=10)
 
 root.mainloop()

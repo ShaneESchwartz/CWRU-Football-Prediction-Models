@@ -161,21 +161,6 @@ def pre_split_prep(df):
     df = create_features(df)
     return df
 
-def edit_previous_play(df, values=None, rewrite='y'):
-    df_new = df.copy()
-    if (rewrite =='y'):
-        if (values is None):
-            return "Rewriting requires a list of values"
-        df_new.loc[len(df_new) - 1] = values
-
-    elif (rewrite =='n'):
-        df_new = df_new.drop(index=len(df_new) - 1)
-
-    else:
-        return "Must set rewrite='y' or 'n'"
-
-    return df_new
-
 def create_possible_rows(df_historical, values):
     # possibilities = []
 
