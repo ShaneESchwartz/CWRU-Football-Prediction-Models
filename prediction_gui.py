@@ -155,9 +155,9 @@ def enter_results_button():
     popup.title("Enter Play Results")
 
     # --- Input fields for each value ---
-    tk.Label(popup, text="Play Type (Run / Pass):").pack(pady=3)
-    play_type_var = tk.StringVar()
-    tk.Entry(popup, textvariable=play_type_var).pack()
+    # tk.Label(popup, text="Play Type (Run / Pass):").pack(pady=3)
+    # play_type_var = tk.StringVar()
+    # tk.Entry(popup, textvariable=play_type_var).pack()
 
     tk.Label(popup, text="Result (e.g., Rush, Complete, Incomplete, Sack, Interception):").pack(pady=3)
     result_var = tk.StringVar()
@@ -201,8 +201,7 @@ def enter_results_button():
             opp_half = 50 - ending_yard_ln
             gain_var = own_half + opp_half
         
-        elif (yard_ln > 0 and
-               ending_yard_ln < 0):
+        elif (yard_ln > 0 and ending_yard_ln < 0):
             own_half = 50 - yard_ln
             opp_half = 50 - abs(ending_yard_ln)
             gain_var = (own_half + opp_half) * -1
@@ -211,11 +210,22 @@ def enter_results_button():
             current_down = 1
             current_distance = 10
 
+        yard_ln = ending_yard_ln
         user_clock = time_on_clock_var.get().strip()
         time_to_half = convert_clock_to_half(user_clock, current_quarter)
 
+        pass_pos = ['Complete', 'Incomplete', 'Scramble', 'Complete, TD', 'Interception', 'Sack', 'Complete, Fumble']
+        run_pos = ['Rush', 'Rush, TD', 'Fumble',]
+
+        result_str = result_var.get().title().strip()
+        if result_str in pass_pos:
+            play_type = "Pass"
+        elif result_str in run_pos:
+            play_type = "Run"
+
+
         results_dict = {
-            "PLAY TYPE": play_type_var.get().title().strip(),
+            "PLAY TYPE": play_type,
             "RESULT": result_var.get().title().strip(),
             "GN/LS": gain_var,
             "PERSONNEL": personnel_var.get().upper().strip(),
